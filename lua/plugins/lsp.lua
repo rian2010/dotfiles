@@ -1,12 +1,12 @@
 return {
   {
-    -- `lazydev` configures Lua LSP for your Neovim config, runtime and plugins
+    -- lazydev configures Lua LSP for your Neovim config, runtime and plugins
     -- used for completion, annotations and signatures of Neovim apis
     "folke/lazydev.nvim",
     ft = "lua",
     opts = {
       library = {
-        -- Load luvit types when the `vim.uv` word is found
+        -- Load luvit types when the vim.uv word is found
         { path = "luvit-meta/library", words = { "vim%.uv" } },
       },
     },
@@ -22,13 +22,61 @@ return {
       "WhoIsSethDaniel/mason-tool-installer.nvim",
 
       -- Useful status updates for LSP.
-      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
+      -- NOTE: opts = {} is the same as calling require('fidget').setup({})
       { "j-hui/fidget.nvim",       opts = {} },
 
       -- Allows extra capabilities provided by nvim-cmp
       "hrsh7th/cmp-nvim-lsp",
     },
     config = function()
+      local function custom_hover()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local clients = vim.lsp.get_active_clients({ buffer = bufnr })
+
+        if #clients == 0 then
+          vim.api.nvim_echo({ { "No LSP client attached", "WarningMsg" } }, true, {})
+          return
+        end
+
+        -- Get the hover information
+        vim.lsp.buf_request_all(bufnr, 'textDocument/hover', vim.lsp.util.make_position_params(), function(responses)
+          local results = {}
+          for _, response in ipairs(responses) do
+            if response.result and response.result.contents then
+              local contents = response.result.contents
+              if type(contents) == 'table' then
+                for _, content in ipairs(contents) do
+                  if content.value then
+                    table.insert(results, content.value)
+                  end
+                end
+              elseif type(contents) == 'string' then
+                table.insert(results, contents)
+              end
+            end
+          end
+
+          if #results == 0 then
+            vim.api.nvim_echo({ { "No hover information available", "WarningMsg" } }, true, {})
+            return
+          end
+
+          -- Join the results into a single string
+          local hover_text = table.concat(results, "\n")
+
+          -- Customize the floating window
+          local opts = {
+            focusable = false,  -- Make the window non-focusable
+            style = "minimal",  -- Minimalistic style
+            border = "rounded", -- Rounded border
+            width = 60,         -- Set a fixed width
+            height = 10,        -- Set a fixed height
+          }
+
+          -- Open the floating preview window
+          vim.lsp.util.open_floating_preview({ hover_text }, 'markdown', opts)
+        end)
+      end
       vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("kickstart-lsp-attach", { clear = true }),
         callback = function(event)
@@ -83,9 +131,13 @@ return {
           --  For example, in C this would take you to the header.
           map("gD", vim.lsp.buf.declaration, "[G]oto [D]eclaration")
 
+
+          -- testing for hovering lsp err
+          map("<leader>ch", custom_hover, "[C]ustom [H]over")
+
           -- The following two autocommands are used to highlight references of the
           -- word under your cursor when your cursor rests there for a little while.
-          --    See `:help CursorHold` for information about when this is executed
+          --    See :help CursorHold for information about when this is executed
           --
           -- When you move your cursor, the highlights will be cleared (the second autocommand).
           local client = vim.lsp.get_client_by_id(event.data.client_id)
@@ -140,7 +192,7 @@ return {
       --  - filetypes (table): Override the default list of associated filetypes for the server
       --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
       --  - settings (table): Override the default settings passed when initializing the server.
-      --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
+      --        For example, to see the options for lua_ls, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
         -- clangd = {},
         pyright = {
@@ -151,13 +203,15 @@ return {
             },
           },
         },
-        rust_analyzer = {},
-        -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
+        rust_analyzer = {
+          capabilities = {}
+        },
+        -- ... etc. See :help lspconfig-all for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
         --
-        -- But for many setups, the LSP (`ts_ls`) will work just fine
+        -- But for many setups, the LSP (ts_ls) will work just fine
         ts_ls = {
           capabilities = {},
           filetypes = {
@@ -172,13 +226,33 @@ return {
         tailwindcss = {
           capabilities = {}
         },
-
+        -- dartls = {
+        --   capabilities = {},
+        --   filetypes = {
+        --     "dart"
+        --   }
+        -- },
+        --
         --tsserver = {
         --enabled = false,
         --},
         --
         gopls = {
           capabilities = {}
+        },
+        -- dcm = {
+        --   cmd = {
+        --     "dcm",
+        --     "start-server"
+        --   },
+        --   capabilities = {},
+        --   filetypes = {
+        --     "dart"
+        --   }
+        -- },
+        intelephense = {
+          capabilities = {},
+          filetypes = { "php" }
         },
 
         -- @deprecated -- tsserver rename to ts_ls but not release yet
@@ -192,7 +266,7 @@ return {
               completion = {
                 callSnippet = "Replace",
               },
-              -- You can toggle below to ignore Lua_LS's noisy `missing-fields` warnings
+              -- You can toggle below to ignore Lua_LS's noisy missing-fields warnings
               -- diagnostics = { disable = { 'missing-fields' } },
             },
           },
@@ -204,8 +278,14 @@ return {
       --  other tools, you can run
       --    :Mason
       --
-      --  You can press `g?` for help in this menu.
-      require("mason").setup()
+      --  You can press g? for help in this menu.
+      -- require("mason").setup()
+      require("mason").setup({
+        ui = {
+          border = "rounded", -- You can use "rounded", "double", "solid", or "none"
+        },
+      })
+
 
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
@@ -247,10 +327,10 @@ return {
           end
           return "make install_jsregexp"
         end)(),
+        -- config = function()
+        --   require("luasnip").filetype_extend("flutter", { "dart" })
+        -- end,
         dependencies = {
-          -- `friendly-snippets` contains a variety of premade snippets.
-          --    See the README about individual language/framework/plugin snippets:
-          --    https://github.com/rafamadriz/friendly-snippets
           {
             'rafamadriz/friendly-snippets',
             config = function()
@@ -269,10 +349,11 @@ return {
       "windwp/nvim-autopairs"
     },
     config = function()
-      -- See `:help cmp`
+      -- See :help cmp
       local cmp = require("cmp")
       local luasnip = require("luasnip")
       luasnip.config.setup({})
+
 
       cmp.setup({
         snippet = {
@@ -290,9 +371,9 @@ return {
         },
 
         -- For an understanding of why these mappings were
-        -- chosen, you will need to read `:help ins-completion`
+        -- chosen, you will need to read :help ins-completion
         --
-        -- No, but seriously. Please read `:help ins-completion`, it is really good!
+        -- No, but seriously. Please read :help ins-completion, it is really good!
         mapping = cmp.mapping.preset.insert({
           -- Select the [n]ext item
           ["<C-n>"] = cmp.mapping.select_next_item(),
@@ -307,6 +388,7 @@ return {
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
           ["<C-y>"] = cmp.mapping.confirm({ select = true }),
+          ["<Enter>"] = cmp.mapping.confirm({ select = true }),
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -457,6 +539,4 @@ return {
       todo_comments.setup()
     end,
   }
-
-
 }

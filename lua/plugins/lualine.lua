@@ -4,6 +4,9 @@ return {
     local icon = require("elzbth.icon")
 
     local mode = "mode"
+    local location = "location"
+    local progress = "progress"
+
     local filetype = { "filetype", icon_only = true }
 
     local diagnostics = {
@@ -65,12 +68,14 @@ return {
     require("lualine").setup({
       options = {
         theme = "auto",
+        component_separators = "", -- Remove component separators
+        section_separators = "",   -- Remove section separators
       },
       sections = {
         lualine_a = { mode },
         lualine_b = {},
         lualine_c = { { 'b:gitsigns_head', icon = '' }, "filename", active_lsp },
-        lualine_x = { diff, diagnostics, filetype },
+        lualine_x = { diff, diagnostics, filetype, progress },
         lualine_y = {},
         lualine_z = {},
       }
