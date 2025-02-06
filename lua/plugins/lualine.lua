@@ -4,10 +4,9 @@ return {
     local icon = require("elzbth.icon")
 
     local mode = "mode"
-    local location = "location"
-    local progress = "progress"
 
-    local filetype = { "filetype", icon_only = true }
+    local filetype = { "filetype", icon_only = true, }
+    local filename = { "filename", padding = 0 }
 
     local diagnostics = {
       "diagnostics",
@@ -45,6 +44,14 @@ return {
       always_visible = false,
     }
 
+    local file_status = {
+      "filestatus",
+      symbols = {
+        modified = "[+]",
+        readonly = "[-]",
+      },
+    }
+
     local active_lsp = {
       function()
         local msg = 'No Active Lsp'
@@ -74,8 +81,8 @@ return {
       sections = {
         lualine_a = { mode },
         lualine_b = {},
-        lualine_c = { { 'b:gitsigns_head', icon = '' }, "filename", active_lsp },
-        lualine_x = { diff, diagnostics, filetype, progress },
+        lualine_c = { { 'b:gitsigns_head', icon = '' }, filetype, filename, file_status, },
+        lualine_x = { diff, diagnostics, },
         lualine_y = {},
         lualine_z = {},
       }
