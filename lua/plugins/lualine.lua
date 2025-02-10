@@ -4,6 +4,7 @@ return {
     local icon = require("elzbth.icon")
 
     local mode = "mode"
+    local location = "location"
 
     local filetype = { "filetype", icon_only = true, }
     local filename = { "filename", padding = 0 }
@@ -82,9 +83,9 @@ return {
         lualine_a = { mode },
         lualine_b = {},
         lualine_c = { { 'b:gitsigns_head', icon = '' }, filetype, filename, file_status, },
-        lualine_x = { diff, diagnostics, },
-        lualine_y = {},
-        lualine_z = {},
+        lualine_x = { diff },
+        lualine_y = { diagnostics, },
+        lualine_z = { location },
       }
     })
   end,

@@ -315,6 +315,9 @@ return {
     "hrsh7th/nvim-cmp",
     event = "InsertEnter",
     dependencies = {
+      {
+        "onsails/lspkind.nvim"
+      },
       -- Snippet Engine & its associated nvim-cmp source
       {
         "L3MON4D3/LuaSnip",
@@ -352,6 +355,7 @@ return {
       -- See :help cmp
       local cmp = require("cmp")
       local luasnip = require("luasnip")
+      local lspkind = require("lspkind")
       luasnip.config.setup({})
 
 
@@ -367,7 +371,23 @@ return {
           documentation = cmp.config.window.bordered(),
         },
         formatting = {
-          format = require("tailwindcss-colorizer-cmp").formatter
+          tes = require("tailwindcss-colorizer-cmp").formatter,
+          format = lspkind.cmp_format({
+            mode = 'symbol',          -- show only symbol annotations
+            maxwidth = {
+              menu = 50,              -- leading text (labelDetails)
+              abbr = 50,              -- actual suggestion item
+            },
+            ellipsis_char = '...',    -- when popup menu exceed maxwidth, the truncated part would show ellipsis_char instead (must define maxwidth first)
+            show_labelDetails = true, -- show labelDetails in menu. Disabled by default
+
+            -- The function below will be called before any actual modifications from lspkind
+            -- so that you can provide more controls on popup customization. (See [#30](https://github.com/onsails/lspkind-nvim/pull/30))
+            before = function(entry, vim_item)
+              -- ...
+              return vim_item
+            end
+          })
         },
 
         -- For an understanding of why these mappings were
