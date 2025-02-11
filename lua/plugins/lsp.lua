@@ -255,6 +255,10 @@ return {
           filetypes = { "php" }
         },
 
+        phpactor = {
+          capabilities = {}
+        },
+
         -- @deprecated -- tsserver rename to ts_ls but not release yet
 
         lua_ls = {
