@@ -81,8 +81,8 @@ return {
       },
       sections = {
         lualine_a = { mode },
-        lualine_b = {},
-        lualine_c = { { 'b:gitsigns_head', icon = '' }, filetype, filename, file_status, },
+        lualine_b = { { 'b:gitsigns_head', icon = '' }, },
+        lualine_c = { filetype, filename, file_status, },
         lualine_x = { diff },
         lualine_y = { diagnostics, },
         lualine_z = { location },
